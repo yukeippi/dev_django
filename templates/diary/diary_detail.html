@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ diary_entry.title }} | 日記アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'diary:diary_list' %}">日記一覧</a></li>
+                <li class="breadcrumb-item active">{{ diary_entry.title }}</li>
+            </ol>
+        </nav>
+
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h1 class="card-title h3 mb-0">{{ diary_entry.title }}</h1>
+                <div>
+                    <a href="{% url 'diary:diary_update' diary_entry.pk %}" class="btn btn-sm btn-outline-primary me-2">
+                        編集
+                    </a>
+                    <a href="{% url 'diary:diary_delete' diary_entry.pk %}" class="btn btn-sm btn-outline-danger">
+                        削除
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="diary-date mb-3">
+                    作成日時: {{ diary_entry.created_at|date:"Y年m月d日 H:i" }}
+                    {% if diary_entry.updated_at != diary_entry.created_at %}
+                        <br>更新日時: {{ diary_entry.updated_at|date:"Y年m月d日 H:i" }}
+                    {% endif %}
+                </p>
+                <div class="diary-content">
+                    {{ diary_entry.content|linebreaks }}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'diary:diary_list' %}" class="btn btn-secondary">
+                一覧に戻る
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
