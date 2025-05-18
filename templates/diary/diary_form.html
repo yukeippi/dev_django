@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}{{ form.instance.title }}の編集{% else %}新規日記作成{% endif %} | 日記アプリ{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'diary:diary_list' %}">日記一覧</a></li>
+                <li class="breadcrumb-item active">
+                    {% if form.instance.pk %}{{ form.instance.title }}の編集{% else %}新規日記作成{% endif %}
+                </li>
+            </ol>
+        </nav>
+
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title h3">
+                    {% if form.instance.pk %}{{ form.instance.title }}の編集{% else %}新規日記作成{% endif %}
+                </h1>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                        {{ form.title.errors }}
+                        <input type="text" name="{{ form.title.name }}" id="{{ form.title.id_for_label }}" 
+                               class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
+                               value="{{ form.title.value|default:'' }}" required>
+                        {% if form.title.help_text %}
+                            <div class="form-text">{{ form.title.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">{{ form.content.label }}</label>
+                        {{ form.content.errors }}
+                        <textarea name="{{ form.content.name }}" id="{{ form.content.id_for_label }}" 
+                                  class="form-control {% if form.content.errors %}is-invalid{% endif %}" 
+                                  rows="10" required>{{ form.content.value|default:'' }}</textarea>
+                        {% if form.content.help_text %}
+                            <div class="form-text">{{ form.content.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if form.instance.pk %}{% url 'diary:diary_detail' form.instance.pk %}{% else %}{% url 'diary:diary_list' %}{% endif %}" 
+                           class="btn btn-secondary">
+                            キャンセル
+                        </a>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

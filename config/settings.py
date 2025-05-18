@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     # 自作アプリ
     # 'apps.core',
+    'apps.diary',
 ]
 
 MIDDLEWARE = [
