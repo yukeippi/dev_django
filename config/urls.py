@@ -9,6 +9,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('sampleapp.urls')),
 ]
 
 # 開発環境でのみ有効な設定
