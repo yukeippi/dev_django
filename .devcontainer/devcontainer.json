@@ -1,9 +1,20 @@
 {
-  "name": "Django PostgreSQL 開発環境",
+  "name": "Django",
   "dockerComposeFile": "docker-compose.yml",
   "service": "web",
   "workspaceFolder": "/workspace",
-  "forwardPorts": [8000, 5432],
+  "forwardPorts": [
+    8000,
+    5432
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "installOhMyZshConfig": true,
+      "configureZshAsDefaultShell": true
+    }
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -12,7 +23,8 @@
         "batisteo.vscode-django",
         "ms-azuretools.vscode-docker",
         "mtxr.sqltools",
-        "mtxr.sqltools-driver-pg"
+        "mtxr.sqltools-driver-pg",
+        "saoudrizwan.claude-dev" // Optional: Cline
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",

@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 # 環境変数の設定
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -10,9 +10,16 @@ WORKDIR /workspace
 # 必要なパッケージのインストール
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        postgresql-client \
-        gettext \
-        git \
+    postgresql-client \
+    gettext \
+    git \
+    vim \
+    curl \
+    wget \
+    htop \
+    net-tools \
+    zsh \
+    unzip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
