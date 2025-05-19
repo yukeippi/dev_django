@@ -1,0 +1,22 @@
+{% extends 'diary/base.html' %}
+
+{% block content %}
+<h1>私の日記</h1>
+<a href="{% url 'diary_create' %}" class="btn btn-primary mb-3">新しい日記を書く</a>
+
+{% for entry in entries %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">{{ entry.title }}</h5>
+            <p class="card-text">{{ entry.content|truncatewords:30 }}</p>
+            <small class="text-muted">{{ entry.created_at|date:"Y年m月d日 H:i" }}</small>
+            <div class="mt-2">
+                <a href="{% url 'diary_detail' entry.pk %}" class="btn btn-sm btn-outline-primary">詳細</a>
+                <a href="{% url 'diary_edit' entry.pk %}" class="btn btn-sm btn-outline-secondary">編集</a>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <p>まだ日記がありません。</p>
+{% endfor %}
+{% endblock %}
