@@ -1,0 +1,25 @@
+{% extends 'diary/base.html' %}
+
+{% block content %}
+<h1>{% if form.instance.pk %}日記を編集{% else %}新しい日記{% endif %}</h1>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="{{ form.title.id_for_label }}" class="form-label">タイトル</label>
+        {{ form.title }}
+        {% if form.title.errors %}
+            <div class="text-danger">{{ form.title.errors }}</div>
+        {% endif %}
+    </div>
+    <div class="mb-3">
+        <label for="{{ form.content.id_for_label }}" class="form-label">内容</label>
+        {{ form.content }}
+        {% if form.content.errors %}
+            <div class="text-danger">{{ form.content.errors }}</div>
+        {% endif %}
+    </div>
+    <button type="submit" class="btn btn-primary">保存</button>
+    <a href="{% url 'diary_list' %}" class="btn btn-secondary">キャンセル</a>
+</form>
+{% endblock %}
