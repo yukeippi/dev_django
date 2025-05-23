@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # サードパーティアプリ
     'debug_toolbar',
+    'django_extensions',
+    'django_seed',
     # 自作アプリ
     'diary',
 ]
