@@ -25,6 +25,7 @@
         "mtxr.sqltools",
         "mtxr.sqltools-driver-pg",
         "tamasfe.even-better-toml",
+        "ms-python.debugpy",
         "saoudrizwan.claude-dev" // Optional: Cline
       ],
       "settings": {
