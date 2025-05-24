@@ -30,8 +30,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # サードパーティアプリ
     'debug_toolbar',
+    'django_extensions',
+    'django_seed',
     # 自作アプリ
-    # 'apps.core',
+    'diary',
 ]
 
 MIDDLEWARE = [
@@ -137,3 +139,7 @@ if DEBUG:
     import socket
     hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
     INTERNAL_IPS += [ip[:-1] + '1' for ip in ips]
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/login/'
