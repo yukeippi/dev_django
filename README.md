@@ -114,9 +114,71 @@ poetry run python manage.py collectstatic
 - デバッグツール（Django Debug Toolbar）
 - コード品質ツール（Black、Pylint、isort）
 
+## CI/CD（GitHub Actions）
+
+このプロジェクトでは、GitHub Actionsを使用した自動テスト・デプロイシステムを構築しています。
+
+### ワークフローの動作
+
+#### トリガー条件
+1. **developブランチへのpush**: コードがdevelopブランチにマージされた時
+2. **タグpush**: `v*`形式のタグ（例：v1.0.0）がpushされた時
+3. **プルリクエスト**: developブランチに対するPR作成・更新時
+4. **手動実行**: GitHub ActionsのUIから手動でワークフローを実行
+
+#### ジョブ構成
+
+**1. testジョブ**
+- **実行条件**: 全てのトリガーで実行
+- **環境**: Ubuntu最新版 + PostgreSQL 15
+- **処理内容**:
+  - Python 3.11のセットアップ
+  - Poetryのインストール
+  - 依存関係のキャッシュ利用・インストール
+  - Djangoテストの実行
+
+**2. deployジョブ**
+- **実行条件**: 
+  - developブランチへのpush
+  - タグpush
+  - 手動実行（deployアクション選択時）
+- **前提条件**: testジョブの成功
+- **処理内容**:
+  - バージョン決定（develop-YYYYMMDD-HHMMSS形式またはタグ名）
+  - EC2サーバーでデプロイスクリプト実行
+  - ヘルスチェック実行
+  - 失敗時の自動ロールバック
+
+**3. rollbackジョブ**
+- **実行条件**: 手動実行でrollbackアクション選択時
+- **処理内容**:
+  - 指定バージョンまたは前バージョンへのロールバック
+  - ロールバック後のヘルスチェック
+
+#### 手動実行オプション
+- **deploy**: 通常のデプロイ実行
+- **rollback**: ロールバック実行
+- **version**: デプロイ・ロールバック対象バージョンの指定（オプション）
+
+#### 特徴
+- **自動テスト**: デプロイ前に必ずテストが実行される
+- **ロールバック機能**: デプロイ失敗時の自動復旧とマニュアル復旧
+- **ヘルスチェック**: デプロイ後の動作確認
+- **バージョン管理**: デプロイごとのバージョン追跡
+- **柔軟な実行**: 自動・手動両方の実行方式をサポート
+
+### デプロイ環境の設定
+
+GitHub Actionsでデプロイを実行するには、以下のシークレットを設定する必要があります：
+
+- `EC2_HOST`: デプロイ先EC2インスタンスのホスト名またはIPアドレス
+- `EC2_USERNAME`: EC2インスタンスのユーザー名
+- `EC2_SSH_KEY`: EC2インスタンスへのSSH接続用の秘密鍵
+
 ## カスタマイズ
 
 - `.devcontainer/devcontainer.json`: VS Code の設定や拡張機能を変更できます
 - `.devcontainer/docker-compose.yml`: Docker サービスの設定を変更できます
 - `.devcontainer/Dockerfile`: Python 環境のカスタマイズができます
 - `pyproject.toml`: Poetry を使用した Python パッケージの依存関係を管理できます
+- `.github/workflows/deploy.yml`: CI/CDパイプラインの設定を変更できます
