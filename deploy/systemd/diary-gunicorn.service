@@ -1,0 +1,22 @@
+[Unit]
+Description=Diary Django Application (Gunicorn)
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/diary
+Environment=DJANGO_SETTINGS_MODULE=config.settings_production
+EnvironmentFile=/var/www/diary/.env
+ExecStart=/var/www/diary/venv/bin/gunicorn --config gunicorn.conf.py config.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
