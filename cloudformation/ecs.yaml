@@ -1,0 +1,234 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Diary App - ECS Fargate and ECR'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: diary-app
+    Description: プロジェクト名
+
+Resources:
+  # ECR リポジトリ
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ProjectName
+      ImageTagMutability: MUTABLE
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep last 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-ecr
+
+  # ECS クラスター
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${ProjectName}-cluster
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-cluster
+
+  # CloudWatch ロググループ
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}
+      RetentionInDays: 7
+
+  # ECS タスク実行ロール
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-ecs-task-execution-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SSMParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+                  - ssm:GetParametersByPath
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/*'
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-ecs-task-execution-role
+
+  # ECS タスクロール
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-ecs-task-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-ecs-task-role
+
+  # ECS タスク定義
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref ProjectName
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 
+        Fn::ImportValue: !Sub ${ProjectName}-ECS-CPU
+      Memory: 
+        Fn::ImportValue: !Sub ${ProjectName}-ECS-Memory
+      ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt ECSTaskRole.Arn
+      ContainerDefinitions:
+        - Name: !Ref ProjectName
+          Image: !Sub '${ECRRepository.RepositoryUri}:latest'
+          PortMappings:
+            - ContainerPort: 8000
+              Protocol: tcp
+          Essential: true
+          Environment:
+            - Name: DJANGO_SETTINGS_MODULE
+              Value: config.settings_production
+            - Name: USE_TLS
+              Value: 'True'
+          Secrets:
+            - Name: SECRET_KEY
+              ValueFrom: 
+                Fn::ImportValue: !Sub ${ProjectName}-SecretKey-Parameter-ARN
+            - Name: RDS_DB_NAME
+              ValueFrom: 
+                Fn::ImportValue: !Sub ${ProjectName}-RDSDBName-Parameter-ARN
+            - Name: RDS_USERNAME
+              ValueFrom: 
+                Fn::ImportValue: !Sub ${ProjectName}-RDSUsername-Parameter-ARN
+            - Name: RDS_PASSWORD
+              ValueFrom: 
+                Fn::ImportValue: !Sub ${ProjectName}-RDSPassword-Parameter-ARN
+            - Name: RDS_HOSTNAME
+              ValueFrom: 
+                Fn::ImportValue: !Sub ${ProjectName}-RDSHostname-Parameter-ARN
+            - Name: RDS_PORT
+              ValueFrom: 
+                Fn::ImportValue: !Sub ${ProjectName}-RDSPort-Parameter-ARN
+            - Name: ALLOWED_HOSTS
+              ValueFrom: 
+                Fn::ImportValue: !Sub ${ProjectName}-AllowedHosts-Parameter-ARN
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - 'curl -f http://localhost:8000/admin/ || exit 1'
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-task-definition
+
+  # ECS サービス
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub ${ProjectName}-service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: 
+        Fn::ImportValue: !Sub ${ProjectName}-ECS-DesiredCount
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${ProjectName}-ECS-SecurityGroup-ID
+          Subnets:
+            - Fn::ImportValue: !Sub ${ProjectName}-PrivateSubnet1-ID
+            - Fn::ImportValue: !Sub ${ProjectName}-PrivateSubnet2-ID
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - TargetGroupArn: 
+            Fn::ImportValue: !Sub ${ProjectName}-TargetGroup-ARN
+          ContainerName: !Ref ProjectName
+          ContainerPort: 8000
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-service
+
+
+Outputs:
+  ECRRepositoryURI:
+    Description: ECR Repository URI
+    Value: !GetAtt ECRRepository.RepositoryUri
+    Export:
+      Name: !Sub ${ProjectName}-ECR-Repository-URI
+
+  ECSClusterName:
+    Description: ECS Cluster Name
+    Value: !Ref ECSCluster
+    Export:
+      Name: !Sub ${ProjectName}-ECS-Cluster-Name
+
+  ECSServiceName:
+    Description: ECS Service Name
+    Value: !GetAtt ECSService.Name
+    Export:
+      Name: !Sub ${ProjectName}-ECS-Service-Name
+
+  TaskDefinitionArn:
+    Description: Task Definition ARN
+    Value: !Ref TaskDefinition
+    Export:
+      Name: !Sub ${ProjectName}-TaskDefinition-ARN
+
+  ECSTaskExecutionRoleArn:
+    Description: ECS Task Execution Role ARN
+    Value: !GetAtt ECSTaskExecutionRole.Arn
+    Export:
+      Name: !Sub ${ProjectName}-ECS-TaskExecutionRole-ARN
+
+  ECSTaskRoleArn:
+    Description: ECS Task Role ARN
+    Value: !GetAtt ECSTaskRole.Arn
+    Export:
+      Name: !Sub ${ProjectName}-ECS-TaskRole-ARN

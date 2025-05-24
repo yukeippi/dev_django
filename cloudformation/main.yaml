@@ -1,0 +1,374 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Diary App - ECS Fargate Infrastructure'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: diary-app
+    Description: プロジェクト名
+
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+    Description: VPCのCIDRブロック
+
+  PublicSubnet1Cidr:
+    Type: String
+    Default: 10.0.1.0/24
+    Description: パブリックサブネット1のCIDRブロック
+
+  PublicSubnet2Cidr:
+    Type: String
+    Default: 10.0.2.0/24
+    Description: パブリックサブネット2のCIDRブロック
+
+  PrivateSubnet1Cidr:
+    Type: String
+    Default: 10.0.10.0/24
+    Description: プライベートサブネット1のCIDRブロック
+
+  PrivateSubnet2Cidr:
+    Type: String
+    Default: 10.0.20.0/24
+    Description: プライベートサブネット2のCIDRブロック
+
+  ECSCpu:
+    Type: String
+    Default: '256'
+    AllowedValues: ['256', '512', '1024', '2048', '4096']
+    Description: ECSタスクのCPU
+
+  ECSMemory:
+    Type: String
+    Default: '512'
+    AllowedValues: ['512', '1024', '2048', '3072', '4096', '5120', '6144', '7168', '8192']
+    Description: ECSタスクのメモリ
+
+  ECSDesiredCount:
+    Type: Number
+    Default: 2
+    MinValue: 1
+    MaxValue: 10
+    Description: ECSサービスの希望タスク数
+
+  RDSInstanceClass:
+    Type: String
+    Default: db.t3.micro
+    AllowedValues: 
+      - db.t3.micro
+      - db.t3.small
+      - db.t3.medium
+      - db.t3.large
+    Description: RDSインスタンスクラス
+
+  RDSAllocatedStorage:
+    Type: Number
+    Default: 20
+    MinValue: 20
+    MaxValue: 1000
+    Description: RDSの初期ストレージサイズ（GB）
+
+  RDSMaxAllocatedStorage:
+    Type: Number
+    Default: 100
+    MinValue: 20
+    MaxValue: 1000
+    Description: RDSの最大ストレージサイズ（GB）
+
+  RDSDatabaseName:
+    Type: String
+    Default: diarydb
+    Description: RDSデータベース名
+
+  RDSUsername:
+    Type: String
+    Default: diaryuser
+    Description: RDSユーザー名
+
+  RDSPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    Description: RDSパスワード
+
+  DjangoSecretKey:
+    Type: String
+    NoEcho: true
+    MinLength: 50
+    Description: DjangoのSECRET_KEY
+
+Resources:
+  # VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-vpc
+
+  # インターネットゲートウェイ
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-igw
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  # パブリックサブネット
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet1Cidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-public-subnet-1
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet2Cidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-public-subnet-2
+
+  # プライベートサブネット
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet1Cidr
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-private-subnet-1
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet2Cidr
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-private-subnet-2
+
+  # NAT Gateway用のElastic IP
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-nat-eip-1
+
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-nat-eip-2
+
+  # NAT Gateway
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-nat-gateway-1
+
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref PublicSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-nat-gateway-2
+
+  # ルートテーブル
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-public-rt
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-private-rt-1
+
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      SubnetId: !Ref PrivateSubnet1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-private-rt-2
+
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway2
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      SubnetId: !Ref PrivateSubnet2
+
+Outputs:
+  VPCId:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub ${ProjectName}-VPC-ID
+
+  PublicSubnet1Id:
+    Description: パブリックサブネット1 ID
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub ${ProjectName}-PublicSubnet1-ID
+
+  PublicSubnet2Id:
+    Description: パブリックサブネット2 ID
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: !Sub ${ProjectName}-PublicSubnet2-ID
+
+  PrivateSubnet1Id:
+    Description: プライベートサブネット1 ID
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: !Sub ${ProjectName}-PrivateSubnet1-ID
+
+  PrivateSubnet2Id:
+    Description: プライベートサブネット2 ID
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: !Sub ${ProjectName}-PrivateSubnet2-ID
+
+  ProjectName:
+    Description: プロジェクト名
+    Value: !Ref ProjectName
+    Export:
+      Name: !Sub ${ProjectName}-ProjectName
+
+  ECSCpu:
+    Description: ECS CPU
+    Value: !Ref ECSCpu
+    Export:
+      Name: !Sub ${ProjectName}-ECS-CPU
+
+  ECSMemory:
+    Description: ECS Memory
+    Value: !Ref ECSMemory
+    Export:
+      Name: !Sub ${ProjectName}-ECS-Memory
+
+  ECSDesiredCount:
+    Description: ECS Desired Count
+    Value: !Ref ECSDesiredCount
+    Export:
+      Name: !Sub ${ProjectName}-ECS-DesiredCount
+
+  RDSInstanceClass:
+    Description: RDS Instance Class
+    Value: !Ref RDSInstanceClass
+    Export:
+      Name: !Sub ${ProjectName}-RDS-InstanceClass
+
+  RDSAllocatedStorage:
+    Description: RDS Allocated Storage
+    Value: !Ref RDSAllocatedStorage
+    Export:
+      Name: !Sub ${ProjectName}-RDS-AllocatedStorage
+
+  RDSMaxAllocatedStorage:
+    Description: RDS Max Allocated Storage
+    Value: !Ref RDSMaxAllocatedStorage
+    Export:
+      Name: !Sub ${ProjectName}-RDS-MaxAllocatedStorage
+
+  RDSDatabaseName:
+    Description: RDS Database Name
+    Value: !Ref RDSDatabaseName
+    Export:
+      Name: !Sub ${ProjectName}-RDS-DatabaseName
+
+  RDSUsername:
+    Description: RDS Username
+    Value: !Ref RDSUsername
+    Export:
+      Name: !Sub ${ProjectName}-RDS-Username
+
+  RDSPassword:
+    Description: RDS Password
+    Value: !Ref RDSPassword
+    Export:
+      Name: !Sub ${ProjectName}-RDS-Password
+
+  DjangoSecretKey:
+    Description: Django Secret Key
+    Value: !Ref DjangoSecretKey
+    Export:
+      Name: !Sub ${ProjectName}-Django-SecretKey

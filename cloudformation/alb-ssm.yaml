@@ -1,0 +1,210 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Diary App - Application Load Balancer and SSM Parameters'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: diary-app
+    Description: プロジェクト名
+
+Resources:
+  # Application Load Balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${ProjectName}-alb
+      Type: application
+      Scheme: internet-facing
+      SecurityGroups:
+        - Fn::ImportValue: !Sub ${ProjectName}-ALB-SecurityGroup-ID
+      Subnets:
+        - Fn::ImportValue: !Sub ${ProjectName}-PublicSubnet1-ID
+        - Fn::ImportValue: !Sub ${ProjectName}-PublicSubnet2-ID
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-alb
+
+  # ALB ターゲットグループ
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${ProjectName}-tg
+      Port: 8000
+      Protocol: HTTP
+      VpcId: 
+        Fn::ImportValue: !Sub ${ProjectName}-VPC-ID
+      TargetType: ip
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /admin/
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      Matcher:
+        HttpCode: '200'
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-tg
+
+  # ALB リスナー (HTTP)
+  HTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  # SSM パラメータ - SECRET_KEY
+  SecretKeyParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${ProjectName}/SECRET_KEY
+      Type: SecureString
+      Value: 
+        Fn::ImportValue: !Sub ${ProjectName}-Django-SecretKey
+      Description: Django SECRET_KEY
+      Tags:
+        Name: !Sub ${ProjectName}-secret-key
+
+  # SSM パラメータ - RDS_DB_NAME
+  RDSDBNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${ProjectName}/RDS_DB_NAME
+      Type: String
+      Value: 
+        Fn::ImportValue: !Sub ${ProjectName}-Database-Name
+      Description: RDS Database Name
+      Tags:
+        Name: !Sub ${ProjectName}-rds-db-name
+
+  # SSM パラメータ - RDS_USERNAME
+  RDSUsernameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${ProjectName}/RDS_USERNAME
+      Type: String
+      Value: 
+        Fn::ImportValue: !Sub ${ProjectName}-RDS-Username
+      Description: RDS Username
+      Tags:
+        Name: !Sub ${ProjectName}-rds-username
+
+  # SSM パラメータ - RDS_PASSWORD
+  RDSPasswordParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${ProjectName}/RDS_PASSWORD
+      Type: SecureString
+      Value: 
+        Fn::ImportValue: !Sub ${ProjectName}-RDS-Password
+      Description: RDS Password
+      Tags:
+        Name: !Sub ${ProjectName}-rds-password
+
+  # SSM パラメータ - RDS_HOSTNAME
+  RDSHostnameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${ProjectName}/RDS_HOSTNAME
+      Type: String
+      Value: 
+        Fn::ImportValue: !Sub ${ProjectName}-Database-Endpoint
+      Description: RDS Hostname
+      Tags:
+        Name: !Sub ${ProjectName}-rds-hostname
+
+  # SSM パラメータ - RDS_PORT
+  RDSPortParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${ProjectName}/RDS_PORT
+      Type: String
+      Value: 
+        Fn::ImportValue: !Sub ${ProjectName}-Database-Port
+      Description: RDS Port
+      Tags:
+        Name: !Sub ${ProjectName}-rds-port
+
+  # SSM パラメータ - ALLOWED_HOSTS
+  AllowedHostsParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub /${ProjectName}/ALLOWED_HOSTS
+      Type: String
+      Value: !Sub '${ApplicationLoadBalancer.DNSName},localhost,127.0.0.1'
+      Description: Django ALLOWED_HOSTS
+      Tags:
+        Name: !Sub ${ProjectName}-allowed-hosts
+
+Outputs:
+  LoadBalancerDNSName:
+    Description: ALB DNS Name
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub ${ProjectName}-ALB-DNSName
+
+  LoadBalancerZoneId:
+    Description: ALB Zone ID
+    Value: !GetAtt ApplicationLoadBalancer.CanonicalHostedZoneID
+    Export:
+      Name: !Sub ${ProjectName}-ALB-ZoneID
+
+  TargetGroupArn:
+    Description: Target Group ARN
+    Value: !Ref TargetGroup
+    Export:
+      Name: !Sub ${ProjectName}-TargetGroup-ARN
+
+  ApplicationURL:
+    Description: Application URL
+    Value: !Sub 'http://${ApplicationLoadBalancer.DNSName}'
+    Export:
+      Name: !Sub ${ProjectName}-Application-URL
+
+  SecretKeyParameterArn:
+    Description: Secret Key Parameter ARN
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/SECRET_KEY'
+    Export:
+      Name: !Sub ${ProjectName}-SecretKey-Parameter-ARN
+
+  RDSDBNameParameterArn:
+    Description: RDS DB Name Parameter ARN
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/RDS_DB_NAME'
+    Export:
+      Name: !Sub ${ProjectName}-RDSDBName-Parameter-ARN
+
+  RDSUsernameParameterArn:
+    Description: RDS Username Parameter ARN
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/RDS_USERNAME'
+    Export:
+      Name: !Sub ${ProjectName}-RDSUsername-Parameter-ARN
+
+  RDSPasswordParameterArn:
+    Description: RDS Password Parameter ARN
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/RDS_PASSWORD'
+    Export:
+      Name: !Sub ${ProjectName}-RDSPassword-Parameter-ARN
+
+  RDSHostnameParameterArn:
+    Description: RDS Hostname Parameter ARN
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/RDS_HOSTNAME'
+    Export:
+      Name: !Sub ${ProjectName}-RDSHostname-Parameter-ARN
+
+  RDSPortParameterArn:
+    Description: RDS Port Parameter ARN
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/RDS_PORT'
+    Export:
+      Name: !Sub ${ProjectName}-RDSPort-Parameter-ARN
+
+  AllowedHostsParameterArn:
+    Description: Allowed Hosts Parameter ARN
+    Value: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/ALLOWED_HOSTS'
+    Export:
+      Name: !Sub ${ProjectName}-AllowedHosts-Parameter-ARN

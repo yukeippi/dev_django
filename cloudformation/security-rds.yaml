@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Diary App - Security Groups and RDS'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: diary-app
+    Description: プロジェクト名
+
+Resources:
+  # セキュリティグループ - ALB
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ProjectName}-alb-sg
+      GroupDescription: Security group for Application Load Balancer
+      VpcId: 
+        Fn::ImportValue: !Sub ${ProjectName}-VPC-ID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTPS
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: All outbound traffic
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-alb-sg
+
+  # セキュリティグループ - ECS
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ProjectName}-ecs-sg
+      GroupDescription: Security group for ECS tasks
+      VpcId: 
+        Fn::ImportValue: !Sub ${ProjectName}-VPC-ID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+          Description: HTTP from ALB
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: All outbound traffic
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-ecs-sg
+
+  # セキュリティグループ - RDS
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${ProjectName}-rds-sg
+      GroupDescription: Security group for RDS database
+      VpcId: 
+        Fn::ImportValue: !Sub ${ProjectName}-VPC-ID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref ECSSecurityGroup
+          Description: PostgreSQL from ECS
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-rds-sg
+
+  # RDS サブネットグループ
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${ProjectName}-db-subnet-group
+      DBSubnetGroupDescription: Subnet group for RDS database
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${ProjectName}-PrivateSubnet1-ID
+        - Fn::ImportValue: !Sub ${ProjectName}-PrivateSubnet2-ID
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-db-subnet-group
+
+  # RDS パラメータグループ
+  DBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      DBParameterGroupName: !Sub ${ProjectName}-db-parameter-group
+      Description: Parameter group for PostgreSQL
+      Family: postgres15
+      Parameters:
+        log_statement: all
+        log_min_duration_statement: '1000'
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-db-parameter-group
+
+  # RDS インスタンス
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    Properties:
+      DBInstanceIdentifier: !Sub ${ProjectName}-db
+      DBInstanceClass: 
+        Fn::ImportValue: !Sub ${ProjectName}-RDS-InstanceClass
+      Engine: postgres
+      EngineVersion: '15.4'
+      AllocatedStorage: 
+        Fn::ImportValue: !Sub ${ProjectName}-RDS-AllocatedStorage
+      MaxAllocatedStorage: 
+        Fn::ImportValue: !Sub ${ProjectName}-RDS-MaxAllocatedStorage
+      StorageType: gp3
+      StorageEncrypted: true
+      DBName: 
+        Fn::ImportValue: !Sub ${ProjectName}-RDS-DatabaseName
+      MasterUsername: 
+        Fn::ImportValue: !Sub ${ProjectName}-RDS-Username
+      MasterUserPassword: 
+        Fn::ImportValue: !Sub ${ProjectName}-RDS-Password
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: '03:00-04:00'
+      PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
+      DBParameterGroupName: !Ref DBParameterGroup
+      EnablePerformanceInsights: true
+      PerformanceInsightsRetentionPeriod: 7
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-db
+
+Outputs:
+  ALBSecurityGroupId:
+    Description: ALB Security Group ID
+    Value: !Ref ALBSecurityGroup
+    Export:
+      Name: !Sub ${ProjectName}-ALB-SecurityGroup-ID
+
+  ECSSecurityGroupId:
+    Description: ECS Security Group ID
+    Value: !Ref ECSSecurityGroup
+    Export:
+      Name: !Sub ${ProjectName}-ECS-SecurityGroup-ID
+
+  RDSSecurityGroupId:
+    Description: RDS Security Group ID
+    Value: !Ref RDSSecurityGroup
+    Export:
+      Name: !Sub ${ProjectName}-RDS-SecurityGroup-ID
+
+  DatabaseEndpoint:
+    Description: RDS Database Endpoint
+    Value: !GetAtt Database.Endpoint.Address
+    Export:
+      Name: !Sub ${ProjectName}-Database-Endpoint
+
+  DatabasePort:
+    Description: RDS Database Port
+    Value: !GetAtt Database.Endpoint.Port
+    Export:
+      Name: !Sub ${ProjectName}-Database-Port
+
+  DatabaseName:
+    Description: RDS Database Name
+    Value: 
+      Fn::ImportValue: !Sub ${ProjectName}-RDS-DatabaseName
+    Export:
+      Name: !Sub ${ProjectName}-Database-Name
