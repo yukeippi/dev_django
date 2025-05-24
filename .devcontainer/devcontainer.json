@@ -24,6 +24,7 @@
         "ms-azuretools.vscode-docker",
         "mtxr.sqltools",
         "mtxr.sqltools-driver-pg",
+        "tamasfe.even-better-toml",
         "saoudrizwan.claude-dev" // Optional: Cline
       ],
       "settings": {
@@ -39,6 +40,6 @@
       }
     }
   },
-  "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt && python manage.py migrate",
+  "postCreateCommand": "pip install --upgrade pip && pip install poetry && poetry install && poetry run python manage.py migrate",
   "remoteUser": "vscode"
 }
