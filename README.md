@@ -82,4 +82,4 @@ python manage.py startapp <アプリケーション名>
 - `.devcontainer/devcontainer.json`: VS Code の設定や拡張機能を変更できます
 - `.devcontainer/docker-compose.yml`: Docker サービスの設定を変更できます
 - `.devcontainer/Dockerfile`: Python 環境のカスタマイズができます
-- `requirements.txt`: Python パッケージの依存関係を管理できます
+- `pyproject.toml`: Poetry を使用した Python パッケージの依存関係を管理できます
