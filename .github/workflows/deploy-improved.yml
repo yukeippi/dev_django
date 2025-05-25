@@ -1,0 +1,168 @@
+name: Deploy with Rollback Support
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+        - deploy
+        - rollback
+      version:
+        description: 'Version to deploy or rollback to (e.g., v1.0.0)'
+        required: false
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_diary
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+    
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+    
+    - name: Run tests
+      env:
+        POSTGRES_DB: test_diary
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        SECRET_KEY: test-secret-key
+      run: |
+        poetry run python manage.py test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
+    
+    steps:
+    - name: Determine version
+      id: version
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=main-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+          fi
+        elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        else
+          echo "version=main-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          export VERSION="${{ steps.version.outputs.version }}"
+          export REPO_URL="${{ github.server_url }}/${{ github.repository }}.git"
+          
+          # デプロイスクリプトを実行
+          bash /var/www/scripts/deploy-with-rollback.sh deploy "$VERSION" "$REPO_URL"
+
+    - name: Health Check
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # ヘルスチェック
+          bash /var/www/scripts/health-check.sh
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ デプロイが成功しました - バージョン: ${{ steps.version.outputs.version }}"
+          else
+            echo "❌ ヘルスチェックに失敗しました。ロールバックを実行します..."
+            bash /var/www/scripts/deploy-with-rollback.sh rollback
+            exit 1
+          fi
+
+  rollback:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback'
+    
+    steps:
+    - name: Rollback on EC2
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          if [[ -n "${{ github.event.inputs.version }}" ]]; then
+            # 指定されたバージョンにロールバック
+            bash /var/www/scripts/deploy-with-rollback.sh rollback "${{ github.event.inputs.version }}"
+          else
+            # 前のバージョンにロールバック
+            bash /var/www/scripts/deploy-with-rollback.sh rollback
+          fi
+
+    - name: Health Check after Rollback
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          bash /var/www/scripts/health-check.sh
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ ロールバックが成功しました"
+          else
+            echo "❌ ロールバック後もヘルスチェックに失敗しています"
+            exit 1
+          fi
