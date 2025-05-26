@@ -1,0 +1,70 @@
+{% extends 'diary/base.html' %}
+
+{% block title %}{{ entry.title }} - 日記アプリ{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">{{ entry.title }}</h1>
+                {% if entry.is_public %}
+                    <span class="badge bg-success fs-6">公開</span>
+                {% else %}
+                    <span class="badge bg-secondary fs-6">非公開</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted">
+                        📅 作成日: {{ entry.created_at|date:"Y年m月d日 H:i" }}
+                        {% if entry.updated_at != entry.created_at %}
+                            <br>
+                            ✏️ 更新日: {{ entry.updated_at|date:"Y年m月d日 H:i" }}
+                        {% endif %}
+                    </small>
+                </div>
+                
+                <div class="entry-content">
+                    {{ entry.content|linebreaks }}
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex gap-2 justify-content-between">
+                    <a href="{% url 'diary:entry_list' %}" class="btn btn-outline-secondary">
+                        ← 一覧に戻る
+                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'diary:entry_update' entry.pk %}" class="btn btn-primary">
+                            ✏️ 編集
+                        </a>
+                        <a href="{% url 'diary:entry_delete' entry.pk %}" class="btn btn-outline-danger">
+                            🗑️ 削除
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ナビゲーション（前後の日記） -->
+        <div class="mt-4">
+            <div class="row">
+                <div class="col-6">
+                    <!-- 前の日記へのリンク（実装は後で） -->
+                </div>
+                <div class="col-6 text-end">
+                    <!-- 次の日記へのリンク（実装は後で） -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.entry-content {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    white-space: pre-wrap;
+}
+</style>
+{% endblock %}

@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     # サードパーティアプリ
     'debug_toolbar',
     # 自作アプリ
+    'apps.diary',
     # 'apps.core',
 ]
 

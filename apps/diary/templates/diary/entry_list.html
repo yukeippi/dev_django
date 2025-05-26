@@ -1,0 +1,91 @@
+{% extends 'diary/base.html' %}
+
+{% block title %}日記一覧 - 日記アプリ{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>📖 私の日記</h1>
+    <a href="{% url 'diary:entry_create' %}" class="btn btn-primary">
+        ✏️ 新しい日記を書く
+    </a>
+</div>
+
+{% if entries %}
+    <div class="row">
+        {% for entry in entries %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ entry.title }}</h5>
+                        <p class="card-text">
+                            {{ entry.content|truncatewords:20 }}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {{ entry.created_at|date:"Y年m月d日" }}
+                            </small>
+                            {% if entry.is_public %}
+                                <span class="badge bg-success">公開</span>
+                            {% else %}
+                                <span class="badge bg-secondary">非公開</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{% url 'diary:entry_detail' entry.pk %}" class="btn btn-outline-primary btn-sm">
+                                詳細
+                            </a>
+                            <a href="{% url 'diary:entry_update' entry.pk %}" class="btn btn-outline-secondary btn-sm">
+                                編集
+                            </a>
+                            <a href="{% url 'diary:entry_delete' entry.pk %}" class="btn btn-outline-danger btn-sm">
+                                削除
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- ページネーション -->
+    {% if is_paginated %}
+        <nav aria-label="ページネーション">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">最初</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">前へ</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">次へ</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">最後</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="text-center py-5">
+        <h3 class="text-muted">まだ日記がありません</h3>
+        <p class="text-muted">最初の日記を書いてみましょう！</p>
+        <a href="{% url 'diary:entry_create' %}" class="btn btn-primary btn-lg">
+            ✏️ 日記を書く
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
