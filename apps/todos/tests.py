@@ -1,5 +1,6 @@
 import pytest
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 from apps.todos.models import Todo
 from apps.todos.factories import (
@@ -11,11 +12,18 @@ from apps.todos.factories import (
 
 
 @pytest.fixture
-def todo():
+def user():
+    """テスト用のUserデータを準備するfixture"""
+    return User.objects.get_or_create(username='testuser')[0]
+
+
+@pytest.fixture
+def todo(user):
     """テスト用のTodoデータを準備するfixture"""
     return TodoFactory(
         title='テストTodo',
-        description='これはテスト用のTodoです。'
+        description='これはテスト用のTodoです。',
+        user=user
     )
 
 
@@ -24,6 +32,8 @@ def test_create_todo(todo):
     """Todoの作成テスト"""
     assert todo.title == 'テストTodo'
     assert todo.description == 'これはテスト用のTodoです。'
+    assert todo.user is not None
+    assert todo.user.username == 'testuser'
     assert todo.created_at is not None
     assert todo.updated_at is not None
     assert todo.completed_at is None
