@@ -10,7 +10,8 @@ class DiaryEntry(models.Model):
     author = models.ForeignKey(
         User, 
         on_delete=models.CASCADE, 
-        verbose_name='作成者'
+        verbose_name='作成者',
+        related_name='diary_entries'
     )
     created_at = models.DateTimeField('作成日時', default=timezone.now)
     updated_at = models.DateTimeField('更新日時', auto_now=True)
