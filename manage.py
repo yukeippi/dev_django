@@ -15,6 +15,13 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
+    
+    # startappコマンドの場合、自動的にappsディレクトリを指定
+    if len(sys.argv) >= 3 and sys.argv[1] == 'startapp':
+        # 既にディレクトリが指定されていない場合のみappsを追加
+        if len(sys.argv) == 3:
+            sys.argv.append('apps/')
+    
     execute_from_command_line(sys.argv)
 
 
