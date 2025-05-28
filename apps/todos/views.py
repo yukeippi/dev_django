@@ -15,5 +15,19 @@ class TodoDetailView(View):
     def get(self, request, pk):
         todo = Todo.objects.get(pk=pk)
         return render(request, 'todos/detail.html', {'todo': todo})
+
+class TodoEditView(View):
+    def get(self, request, pk):
+        todo = Todo.objects.get(pk=pk)
+        return render(request, 'todos/edit.html', {'form': todo})
+
+    def post(self, request, pk):
+        todo = Todo.objects.get(pk=pk)
+        todo.title = request.POST.get('title')
+        todo.description = request.POST.get('description')
+        todo.save()
+        return render(request, 'todos/detail.html', {'todo': todo})
+
 list_view = TodoListView.as_view()
 detail_view = TodoDetailView.as_view()
+edit_view = TodoEditView.as_view()
