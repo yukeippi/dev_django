@@ -10,6 +10,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('diary/', include('apps.diary.urls')),
+    path('todos/', include('apps.todos.urls')),
 ]
 
 # 開発環境でのみ有効な設定
