@@ -5,4 +5,5 @@ app_name = 'todos'
 
 urlpatterns = [
     path('', views.list_view, name='todos_list'),
+    path('<int:pk>/', views.detail_view, name='todos_detail'),
 ]

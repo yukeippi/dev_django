@@ -1,0 +1,10 @@
+{% extends "todos/base.html" %}
+
+{% block content %}
+<h1>{{ todo.title }}</h1>
+<p class="text-muted">作成日: {{ todo.created_at }}</p>
+<p>{{ todo.description }}</p>
+
+{% comment %} 編集画面へのリンクボタン {% endcomment %}
+<a href="{% url 'todos:todos_edit' todo.id %}" class="btn btn-primary">編集</a>
+{% endblock %}
