@@ -5,12 +5,15 @@
 <p class="text-muted">作成日: {{ todo.created_at }}</p>
 <p>{{ todo.description }}</p>
 
+<!-- 一覧画面へのリンクボタン -->
+<a href="{% url 'todos:todos_list' %}" class="btn btn-secondary">一覧</a>
+
 <!-- 編集画面へのリンクボタン -->
 <a href="{% url 'todos:todos_edit' todo.id %}" class="btn btn-primary">編集</a>
 
 <!-- 削除ボタン（確認メッセージ付き） -->
 <form method="post" action="{% url 'todos:todos_delete' todo.id %}" style="display: inline;">
     {% csrf_token %}
-    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('本当にこのTodoを削除しますか？');">削除</button>
+    <input type="submit" value="削除" class="btn btn-outline-danger btn-sm" onclick="return confirm('本当にこのTodoを削除しますか？');">
 </form>
 {% endblock %}

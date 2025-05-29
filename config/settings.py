@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     # サードパーティアプリ
     'debug_toolbar',
     # 自作アプリ
+    'apps.accounts',
     'apps.diary',
     'apps.todos',
     # 'apps.core',
@@ -142,6 +143,6 @@ if DEBUG:
     INTERNAL_IPS += [ip[:-1] + '1' for ip in ips]
 
 # Authentication settings
-LOGIN_URL = '/admin/login/'
+LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/todos/'
 LOGOUT_REDIRECT_URL = '/'

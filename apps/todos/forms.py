@@ -5,6 +5,7 @@ class TodoForm(forms.ModelForm):
     title = forms.CharField(
         label='タイトル',
         max_length=200,
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'タスクのタイトルを入力してください'

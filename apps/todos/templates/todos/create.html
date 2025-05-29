@@ -24,10 +24,10 @@
 
             <!-- タイトル -->
             <div class="mb-3">
-              <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
-              {{ form.title }}
+              <label for="id_title" class="form-label">タイトル</label>
+              <input type="text" name="title" id="id_title" class="form-control{% if form.title.errors %} is-invalid{% endif %}" placeholder="タスクのタイトルを入力してください" value="{{ form.title.value|default:'' }}">
               {% if form.title.errors %}
-              <div class="invalid-feedback d-block">
+              <div class="invalid-feedback">
                 {% for error in form.title.errors %}{{ error }}{% endfor %}
               </div>
               {% endif %}
@@ -35,10 +35,10 @@
 
             <!-- 本文 -->
             <div class="mb-3">
-              <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
-              {{ form.description }}
+              <label for="id_description" class="form-label">説明</label>
+              <textarea name="description" id="id_description" class="form-control{% if form.description.errors %} is-invalid{% endif %}" rows="3" placeholder="タスクの詳細を入力してください...">{{ form.description.value|default:'' }}</textarea>
               {% if form.description.errors %}
-              <div class="invalid-feedback d-block">
+              <div class="invalid-feedback">
                 {% for error in form.description.errors %}{{ error }}{% endfor %}
               </div>
               {% endif %}
@@ -46,7 +46,7 @@
 
             <!-- ボタン -->
             <div class="d-flex justify-content-between">
-              <button type="submit" class="btn btn-primary">作成</button>
+              <input type="submit" value="作成" class="btn btn-primary">
               <a href="{% url 'todos:todos_list' %}" class="btn btn-secondary">戻る</a>
             </div>
           </form>

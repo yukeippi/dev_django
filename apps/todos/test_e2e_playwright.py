@@ -47,14 +47,14 @@ class TodoPlaywrightE2ETest(StaticLiveServerTestCase):
 
     async def login(self, username='testuser', password='testpass123'):
         """ユーザーログイン"""
-        await self.page.goto(f'{self.live_server_url}/admin/login/')
+        await self.page.goto(f'{self.live_server_url}/login/')
         
         # ユーザー名とパスワードを入力
         await self.page.fill('input[name="username"]', username)
         await self.page.fill('input[name="password"]', password)
         
         # ログインボタンをクリック
-        await self.page.click('input[type="submit"]')
+        await self.page.click('button[type="submit"]')
         
         # ログイン成功を確認（todosページにリダイレクトされる）
         await self.page.wait_for_url('**/todos/**')
@@ -132,6 +132,9 @@ class TodoPlaywrightE2ETest(StaticLiveServerTestCase):
                 # 8. Todoを削除
                 # 詳細ページに戻る
                 await self.page.click(f'text={updated_title}')
+                
+                # 確認ダイアログを処理するためのリスナーを設定
+                self.page.on('dialog', lambda dialog: dialog.accept())
                 
                 # 削除ボタンをクリック
                 await self.page.click('input[value="削除"]')
