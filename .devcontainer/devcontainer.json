@@ -40,6 +40,6 @@
       }
     }
   },
-  "postCreateCommand": "pip install --upgrade pip && pip install poetry && poetry install && poetry run python manage.py migrate",
+  "postCreateCommand": "pip install --upgrade pip && pip install poetry && poetry install && poetry run python manage.py migrate && poetry run playwright install",
   "remoteUser": "vscode"
 }

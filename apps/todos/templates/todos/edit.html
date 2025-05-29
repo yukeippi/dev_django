@@ -1,0 +1,70 @@
+{% extends 'todos/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h4 class="mb-0">Todo編集</h4>
+        </div>
+        <div class="card-body">
+          <!-- メッセージ表示 -->
+          {% if messages %}
+          {% for message in messages %}
+          <div
+            class="alert alert-{{ message.tags }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+            ></button>
+          </div>
+          {% endfor %}
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+
+            <!-- タイトル -->
+            <div class="mb-3">
+              <label for="id_title" class="form-label">タイトル</label>
+              <input type="text" name="title" id="id_title" class="form-control{% if form.title.errors %} is-invalid{% endif %}" placeholder="タスクのタイトルを入力してください" value="{{ form.title.value|default:'' }}">
+              {% if form.title.errors %}
+              <div class="invalid-feedback">
+                {% for error in form.title.errors %}{{ error }}{% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- 本文 -->
+            <div class="mb-3">
+              <label for="id_description" class="form-label">説明</label>
+              <textarea name="description" id="id_description" class="form-control{% if form.description.errors %} is-invalid{% endif %}" rows="3" placeholder="タスクの詳細を入力してください...">{{ form.description.value|default:'' }}</textarea>
+              {% if form.description.errors %}
+              <div class="invalid-feedback">
+                {% for error in form.description.errors %}{{ error }}{% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- ボタン -->
+            <div class="d-flex justify-content-between">
+              <a
+                href="{% url 'todos:todos_detail' todo.pk %}"
+                class="btn btn-secondary"
+              >
+                <i class="fas fa-arrow-left"></i> 戻る
+              </a>
+              <input type="submit" value="更新" class="btn btn-primary">
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

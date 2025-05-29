@@ -21,6 +21,19 @@ pytest = ">=8.3.5,<9.0.0"
 pytest-django = ">=4.11.1,<5.0.0"
 pytest-describe = ">=2.2.0,<3.0.0"
 faker = ">=37.3.0,<38.0.0"
+ipython = "^9.2.0"
+ipdb = "^0.13.13"
+debugpy = "^1.8.14"
+factory-boy = "^3.3.3"
+playwright = "^1.40.0"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+python_classes = ["Test*", "*Test", "*Tests"]
+python_functions = ["test_*"]
+testpaths = ["apps"]
+addopts = ["--reuse-db", "--nomigrations", "-v"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
