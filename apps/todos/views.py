@@ -95,7 +95,17 @@ class TodoEditView(LoginRequiredMixin, View):
                 'todo': todo
             })
 
+class TodoDeleteView(LoginRequiredMixin, View):
+    '''削除処理'''
+    def post(self, request, pk):
+        # ログインユーザーのTodoのみ取得
+        todo = get_object_or_404(Todo, pk=pk, user=request.user)
+        todo.delete()
+        messages.success(request, 'Todoが正常に削除されました。')
+        return redirect('todos:todos_list')
+
 list_view = TodoListView.as_view()
 detail_view = TodoDetailView.as_view()
 create_view = TodoCreateView.as_view()
 edit_view = TodoEditView.as_view()
+delete_view = TodoDeleteView.as_view()
