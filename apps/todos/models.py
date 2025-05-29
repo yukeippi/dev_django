@@ -19,7 +19,7 @@ class Todo(models.Model):
         blank=True, 
         null=True,
         validators=[
-            MaxLengthExclusiveValidator(10, message='descriptionは10文字未満で入力してください。')
+            MaxLengthExclusiveValidator(30, message='descriptionは30文字未満で入力してください。')
         ]
     )
     user = models.ForeignKey(
