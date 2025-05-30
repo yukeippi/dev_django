@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django_extensions',
     # サードパーティアプリ
     'debug_toolbar',
+    'guardian',
     # 自作アプリ
     'apps.accounts',
     'apps.diary',
@@ -207,3 +208,12 @@ SAML_METADATA_FILE = os.path.join(BASE_DIR, 'saml', 'metadata.xml')
 # SAML認証後のリダイレクト
 SAML_LOGIN_REDIRECT_URL = '/todos/'
 SAML_LOGOUT_REDIRECT_URL = '/'
+
+# Django Guardian settings
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',  # デフォルト
+    'guardian.backends.ObjectPermissionBackend',
+)
+
+# Guardian設定
+GUARDIAN_MONKEY_PATCH_USER = False

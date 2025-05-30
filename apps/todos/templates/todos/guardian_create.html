@@ -1,0 +1,110 @@
+{% extends "todos/base.html" %}
+
+{% block title %}Guardian Todo作成{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4><i class="fas fa-plus"></i> Guardian Todo作成</h4>
+                    <a href="{% url 'todos:guardian_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-left"></i> 一覧に戻る
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Guardian権限管理について</h6>
+                        <p class="mb-0">作成されたTodoには、自動的にあなたに対してすべての権限（閲覧・編集・削除）が付与されます。作成後に他のユーザーに権限を付与することができます。</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">
+                                <i class="fas fa-heading"></i> {{ form.title.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.title.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                10文字以上で入力してください。
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                <i class="fas fa-align-left"></i> {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.description.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                30文字未満で入力してください（任意）。
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 作成
+                            </button>
+                            <a href="{% url 'todos:guardian_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> キャンセル
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 権限管理の説明カード -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6><i class="fas fa-shield-alt"></i> 作成後の権限管理</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>自動付与される権限:</h6>
+                            <ul class="small">
+                                <li><i class="fas fa-eye text-success"></i> <strong>view_todo:</strong> 閲覧権限</li>
+                                <li><i class="fas fa-edit text-warning"></i> <strong>change_todo:</strong> 編集権限</li>
+                                <li><i class="fas fa-trash text-danger"></i> <strong>delete_todo:</strong> 削除権限</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>作成後にできること:</h6>
+                            <ul class="small">
+                                <li>他のユーザーに個別権限を付与</li>
+                                <li>権限の細かい制御（閲覧のみ、編集可能など）</li>
+                                <li>いつでも権限の変更・削除</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

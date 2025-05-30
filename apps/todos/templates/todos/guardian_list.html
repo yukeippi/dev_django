@@ -1,0 +1,110 @@
+{% extends "todos/base.html" %}
+
+{% block title %}Guardian Todo一覧{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Guardian Todo一覧</h2>
+                <a href="{% url 'todos:guardian_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 新規作成
+                </a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Guardian権限管理について</h5>
+                <p>このページでは、django-guardianを使用したオブジェクトレベルの権限管理を実装しています。</p>
+                <ul>
+                    <li>自分が作成したTodoは常に表示されます</li>
+                    <li>他のユーザーから閲覧権限を付与されたTodoも表示されます</li>
+                    <li>各Todoに対して個別に権限を設定できます</li>
+                </ul>
+            </div>
+
+            {% if todos %}
+                <div class="row">
+                    {% for todo in todos %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        {% if todo.user == user %}
+                                            <i class="fas fa-user text-primary"></i> 自分のTodo
+                                        {% else %}
+                                            <i class="fas fa-share text-success"></i> 共有されたTodo
+                                        {% endif %}
+                                    </small>
+                                    <small class="text-muted">作成者: {{ todo.user.username }}</small>
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ todo.title }}</h5>
+                                    {% if todo.description %}
+                                        <p class="card-text">{{ todo.description|truncatewords:10 }}</p>
+                                    {% endif %}
+                                    <small class="text-muted">
+                                        作成日: {{ todo.created_at|date:"Y/m/d H:i" }}
+                                    </small>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="{% url 'todos:guardian_detail' todo.pk %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i> 詳細
+                                        </a>
+                                        {% if todo.user == user %}
+                                            <a href="{% url 'todos:guardian_permissions' todo.pk %}" 
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-key"></i> 権限管理
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-warning text-center">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Todoがありません</h4>
+                    <p>まだTodoが作成されていないか、閲覧権限がありません。</p>
+                    <a href="{% url 'todos:guardian_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 最初のTodoを作成する
+                    </a>
+                </div>
+            {% endif %}
+
+            <div class="mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-question-circle"></i> 使い方</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li><strong>Todo作成:</strong> 「新規作成」ボタンでTodoを作成します</li>
+                            <li><strong>権限管理:</strong> 自分のTodoの「権限管理」ボタンで他のユーザーに権限を付与できます</li>
+                            <li><strong>権限の種類:</strong>
+                                <ul>
+                                    <li><code>view_todo</code>: 閲覧権限</li>
+                                    <li><code>change_todo</code>: 編集権限</li>
+                                    <li><code>delete_todo</code>: 削除権限</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "todos/base.html" %}
+
+{% block title %}{{ todo.title }} - Guardian Todo詳細{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>
+                        <i class="fas fa-tasks"></i> {{ todo.title }}
+                        {% if is_owner %}
+                            <span class="badge bg-primary ms-2">作成者</span>
+                        {% else %}
+                            <span class="badge bg-success ms-2">共有</span>
+                        {% endif %}
+                    </h4>
+                    <div class="btn-group">
+                        <a href="{% url 'todos:guardian_list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> 一覧に戻る
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="row mb-3">
+                        <div class="col-sm-3"><strong>タイトル:</strong></div>
+                        <div class="col-sm-9">{{ todo.title }}</div>
+                    </div>
+
+                    {% if todo.description %}
+                        <div class="row mb-3">
+                            <div class="col-sm-3"><strong>詳細:</strong></div>
+                            <div class="col-sm-9">{{ todo.description|linebreaks }}</div>
+                        </div>
+                    {% endif %}
+
+                    <div class="row mb-3">
+                        <div class="col-sm-3"><strong>作成者:</strong></div>
+                        <div class="col-sm-9">{{ todo.user.username }}</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-3"><strong>作成日時:</strong></div>
+                        <div class="col-sm-9">{{ todo.created_at|date:"Y年m月d日 H:i" }}</div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-sm-3"><strong>更新日時:</strong></div>
+                        <div class="col-sm-9">{{ todo.updated_at|date:"Y年m月d日 H:i" }}</div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        {% if 'change_todo' in user_perms or is_owner %}
+                            <a href="{% url 'todos:guardian_edit' todo.pk %}" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> 編集
+                            </a>
+                        {% endif %}
+
+                        {% if 'delete_todo' in user_perms or is_owner %}
+                            <form method="post" action="{% url 'todos:guardian_delete' todo.pk %}" 
+                                  style="display: inline;" 
+                                  onsubmit="return confirm('本当に削除しますか？');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> 削除
+                                </button>
+                            </form>
+                        {% endif %}
+
+                        {% if is_owner %}
+                            <a href="{% url 'todos:guardian_permissions' todo.pk %}" class="btn btn-info">
+                                <i class="fas fa-key"></i> 権限管理
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- 権限情報カード -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-shield-alt"></i> あなたの権限</h5>
+                </div>
+                <div class="card-body">
+                    {% if is_owner %}
+                        <div class="alert alert-primary">
+                            <i class="fas fa-crown"></i> <strong>作成者</strong><br>
+                            すべての操作が可能です
+                        </div>
+                    {% else %}
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-eye"></i> 閲覧</span>
+                                {% if 'view_todo' in user_perms %}
+                                    <span class="badge bg-success">許可</span>
+                                {% else %}
+                                    <span class="badge bg-danger">拒否</span>
+                                {% endif %}
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-edit"></i> 編集</span>
+                                {% if 'change_todo' in user_perms %}
+                                    <span class="badge bg-success">許可</span>
+                                {% else %}
+                                    <span class="badge bg-danger">拒否</span>
+                                {% endif %}
+                            </div>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-trash"></i> 削除</span>
+                                {% if 'delete_todo' in user_perms %}
+                                    <span class="badge bg-success">許可</span>
+                                {% else %}
+                                    <span class="badge bg-danger">拒否</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Guardian機能説明カード -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6><i class="fas fa-info-circle"></i> Guardian機能</h6>
+                </div>
+                <div class="card-body">
+                    <small class="text-muted">
+                        <p>django-guardianにより、このTodoに対する個別の権限が管理されています。</p>
+                        <ul class="small">
+                            <li><strong>オブジェクトレベル権限:</strong> 各Todoごとに異なる権限設定が可能</li>
+                            <li><strong>細かい制御:</strong> 閲覧・編集・削除を個別に制御</li>
+                            <li><strong>動的権限:</strong> 作成者が他のユーザーに権限を付与・削除可能</li>
+                        </ul>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

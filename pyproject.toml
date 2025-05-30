@@ -27,6 +27,7 @@ debugpy = "^1.8.14"
 factory-boy = "^3.3.3"
 playwright = "^1.40.0"
 python3-saml = "^1.16.0"
+django-guardian = "^3.0.0"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
