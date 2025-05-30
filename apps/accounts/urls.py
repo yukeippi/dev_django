@@ -8,6 +8,8 @@ urlpatterns = [
     path('', views.HomeView.as_view(), name='home'),
     path('login/', views.LoginView.as_view(), name='login'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
+    # SAML認証
+    path('saml-login/', views.SAMLLoginView.as_view(), name='saml_login'),
     # パスワード再設定
     path('password_reset/', auth_views.PasswordResetView.as_view(
         template_name='accounts/password_reset_form.html',

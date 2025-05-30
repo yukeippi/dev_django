@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+                     entityID="https://example-idp.com">
+    <md:IDPSSODescriptor WantAuthnRequestsSigned="false"
+                         protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <md:KeyDescriptor use="signing">
+            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:X509Data>
+                    <ds:X509Certificate>
+                        <!-- ここにIdPの証明書を配置 -->
+                        MIICXjCCAcegAwIBAgIBADANBgkqhkiG9w0BAQ0FADBLMQswCQYDVQQGEwJ1czELMAkGA1UECAwCQ0ExFjAUBgNVBAcMDU1vdW50YWluIFZpZXcxEDAOBgNVBAoMB0NvbXBhbnkxCzAJBgNVBAsMAklUMB4XDTE5MDUwOTE4NTQwNVoXDTI5MDUwNjE4NTQwNVowSzELMAkGA1UEBhMCdXMxCzAJBgNVBAgMAkNBMRYwFAYDVQQHDA1Nb3VudGFpbiBWaWV3MRAwDgYDVQQKDAdDb21wYW55MQswCQYDVQQLDAJJVDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAyZA+7VzyVAVjKKeswWu7YQhAtXZ2AdRR3HYhxoXFz7syah0ov7LMir4dcRapVpiTdBUXLFdUWZ2bt+j9v1ok+kWQVztz9iVXcFJyWLT1VKvVVvhkuPC7zfABBjbqjnwdlHCJkg+1Nroz7JQoXQVBgbZ2Y9QQXVVjKQoEzjCYjw8CAwEAAaNQME4wHQYDVR0OBBYEFJtvXbRmxRFXYVMOPH/29pXCpGmLMB8GA1UdIwQYMBaAFJtvXbRmxRFXYVMOPH/29pXCpGmLMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQENBQADgYEAkYnZ6cGqDSjMymq0TOP6vHEb/2VJlb9vWBs97mu9Iq2FNcNelzQfVOy/yVDKRRxuFzQnClJV2vdriuMiVpzNcs+SDVtpMWlTgTJpWjzjzSMp+KUR9qy6dWqKNMVowdwjhkspKqL8m7ZZZ1KU7nQvWjMnVtrgziPfCwusgUqyrpU=
+                    </ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </md:KeyDescriptor>
+        <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+                                Location="https://example-idp.com/sso"/>
+        <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+                                Location="https://example-idp.com/sso"/>
+    </md:IDPSSODescriptor>
+</md:EntityDescriptor>

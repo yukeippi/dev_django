@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAML認証デモ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #28a745;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SAML認証デモページ</h1>
+        
+        <div class="success">
+            <strong>成功!</strong> {{ message }}
+        </div>
+        
+        <div class="info">
+            <h3>SAML認証の実装について</h3>
+            <p>このデモでは、SAML認証の基本的な構造を示しています。実際の本番環境では以下の設定が必要です：</p>
+            <ul>
+                <li>Identity Provider (IdP) のメタデータ設定</li>
+                <li>Service Provider (SP) の証明書と秘密鍵</li>
+                <li>適切な属性マッピング</li>
+                <li>セキュリティ設定の強化</li>
+            </ul>
+        </div>
+        
+        <h3>利用可能なエンドポイント</h3>
+        <ul>
+            <li><strong>SAML ログイン:</strong> <code>/saml/login/</code></li>
+            <li><strong>SAML ACS:</strong> <code>/saml/acs/</code></li>
+            <li><strong>SAML SLS:</strong> <code>/saml/sls/</code></li>
+            <li><strong>SAML メタデータ:</strong> <code>/saml/metadata/</code></li>
+        </ul>
+        
+        <div style="margin-top: 30px;">
+            <a href="/" class="btn">ホームに戻る</a>
+            <a href="/saml/metadata/" class="btn">メタデータを表示</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.diary',
     'apps.todos',
+    'apps.saml',
     # 'apps.core',
 ]
 
@@ -161,3 +162,48 @@ else:
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
 DEFAULT_FROM_EMAIL = 'noreply@example.com'
+
+# SAML2 Authentication Settings (python3-saml)
+# SAML設定
+SAML_SETTINGS = {
+    # Service Provider設定
+    'sp': {
+        'entityId': os.environ.get('SAML_ENTITY_ID', 'http://localhost:8000/saml/metadata/'),
+        'assertionConsumerService': {
+            'url': 'http://localhost:8000/saml/acs/',
+            'binding': 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST'
+        },
+        'singleLogoutService': {
+            'url': 'http://localhost:8000/saml/sls/',
+            'binding': 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect'
+        },
+        'NameIDFormat': 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+        'x509cert': '',
+        'privateKey': ''
+    },
+    # Identity Provider設定
+    'idp': {
+        'entityId': 'https://example-idp.com',
+        'singleSignOnService': {
+            'url': 'https://example-idp.com/sso',
+            'binding': 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect'
+        },
+        'singleLogoutService': {
+            'url': 'https://example-idp.com/sls',
+            'binding': 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect'
+        },
+        'x509cert': ''
+    }
+}
+
+# SAML設定フォルダ
+SAML_FOLDER = os.path.join(BASE_DIR, 'saml')
+
+# SAML証明書ファイルパス
+SAML_CERT_FILE = os.path.join(BASE_DIR, 'saml', 'certs', 'sp.crt')
+SAML_KEY_FILE = os.path.join(BASE_DIR, 'saml', 'certs', 'sp.key')
+SAML_METADATA_FILE = os.path.join(BASE_DIR, 'saml', 'metadata.xml')
+
+# SAML認証後のリダイレクト
+SAML_LOGIN_REDIRECT_URL = '/todos/'
+SAML_LOGOUT_REDIRECT_URL = '/'

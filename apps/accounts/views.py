@@ -1,6 +1,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import reverse_lazy
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, RedirectView
+from django.shortcuts import redirect
 
 
 class LoginView(auth_views.LoginView):
@@ -20,3 +21,11 @@ class LogoutView(auth_views.LogoutView):
 class HomeView(TemplateView):
     """ホームページビュー"""
     template_name = 'accounts/home.html'
+
+
+class SAMLLoginView(RedirectView):
+    """SAML認証へのリダイレクトビュー"""
+    permanent = False
+    
+    def get_redirect_url(self, *args, **kwargs):
+        return '/saml/login/'

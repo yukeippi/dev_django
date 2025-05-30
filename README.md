@@ -114,6 +114,73 @@ poetry run python manage.py collectstatic
 - デバッグツール（Django Debug Toolbar）
 - コード品質ツール（Black、Pylint、isort）
 
+## SAML認証の設定
+
+このアプリケーションはSAML認証をサポートしています。以下の手順で設定してください：
+
+### 1. 依存関係のインストール
+
+```bash
+poetry install
+```
+
+### 2. 環境変数の設定
+
+`.env.example` をコピーして `.env` ファイルを作成し、SAML IdP の情報を設定してください：
+
+```bash
+cp .env.example .env
+```
+
+`.env` ファイルを編集して、以下の値を設定してください：
+
+```env
+SAML_METADATA_URL=https://your-idp.com/metadata
+SAML_ENTITY_ID=http://your-domain.com/saml2_auth/acs/
+```
+
+### 3. SAML証明書の設定
+
+本番環境では、適切なSAML証明書を `saml/certs/` ディレクトリに配置してください：
+
+- `saml/certs/sp.crt`: Service Provider証明書
+- `saml/certs/sp.key`: Service Provider秘密鍵
+
+開発環境では、自己署名証明書が自動生成されます。
+
+### 4. IdPメタデータの設定
+
+SAML IdP のメタデータを `saml/metadata.xml` に配置するか、環境変数 `SAML_METADATA_URL` でメタデータのURLを指定してください。
+
+### 5. SAML認証の利用
+
+- 通常のログイン: `/login/`
+- SAML認証: `/saml-login/` または `/saml2/login/`
+- SAML メタデータ: `/saml2/metadata/`
+- SAML ACS: `/saml2/acs/`
+- SAML SLS: `/saml2/ls/`
+
+### SAML設定のカスタマイズ
+
+`config/settings.py` の `SAML_CONFIG` 設定で、以下をカスタマイズできます：
+
+- Identity Provider設定
+- Service Provider設定
+- 属性マッピング（`SAML_ATTRIBUTE_MAPPING`）
+- ユーザー作成設定（`SAML_CREATE_UNKNOWN_USER`）
+- リダイレクトURL
+
+### 使用ライブラリ
+
+この実装では `python3-saml` を使用しています。これは人気の高いSAMLライブラリで、多くの機能を提供します。現在はデモ実装となっており、実際のIdPと連携するには追加の設定が必要です。
+
+### 実装の特徴
+
+- **デモ実装**: 現在はSAML認証の基本構造を示すデモ実装です
+- **拡張可能**: 実際のIdPメタデータと証明書を設定することで本格的なSAML認証が可能
+- **エンドポイント完備**: 必要なSAMLエンドポイント（login, acs, sls, metadata）をすべて提供
+- **Django統合**: 既存のDjango認証システムと併用可能
+
 ## カスタマイズ
 
 - `.devcontainer/devcontainer.json`: VS Code の設定や拡張機能を変更できます

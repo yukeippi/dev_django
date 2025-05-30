@@ -12,6 +12,8 @@ urlpatterns = [
     path('', include('apps.accounts.urls')),
     path('diary/', include('apps.diary.urls')),
     path('todos/', include('apps.todos.urls')),
+    # SAML認証
+    path('saml/', include('apps.saml.urls')),
 ]
 
 # 開発環境でのみ有効な設定

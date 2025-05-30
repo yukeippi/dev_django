@@ -46,6 +46,11 @@
     <button type="submit" class="btn">ログイン</button>
 </form>
 
+<div class="saml-login" style="margin: 20px 0; text-align: center;">
+    <p>または</p>
+    <a href="{% url 'accounts:saml_login' %}" class="btn btn-saml" style="background-color: #007bff; color: white; text-decoration: none; padding: 10px 20px; border-radius: 4px; display: inline-block;">SAML認証でログイン</a>
+</div>
+
 <div class="links">
     <a href="{% url 'accounts:password_reset' %}">パスワードを忘れた方はこちら</a> |
     <a href="{% url 'accounts:home' %}">ホームに戻る</a>

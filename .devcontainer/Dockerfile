@@ -20,6 +20,11 @@ RUN apt-get update \
     net-tools \
     zsh \
     unzip \
+    # SAML認証用の依存関係
+    libxml2-dev \
+    libxmlsec1-dev \
+    libxmlsec1-openssl \
+    pkg-config \
     # Playwright用の依存関係
     libnss3 \
     libnspr4 \
