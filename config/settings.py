@@ -146,3 +146,18 @@ if DEBUG:
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/todos/'
 LOGOUT_REDIRECT_URL = '/'
+
+# Email settings for password reset
+if DEBUG:
+    # 開発環境ではコンソールにメールを出力
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    # 本番環境ではSMTPを使用
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 587
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+DEFAULT_FROM_EMAIL = 'noreply@example.com'

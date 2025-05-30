@@ -31,23 +31,43 @@ def install_playwright_browsers():
         return False
     return True
 
-def run_e2e_tests():
+def run_e2e_tests(test_module=None):
     """E2Eテストを実行"""
     print("\n=== E2Eテストを実行中 ===")
-    cmd = [
-        'python', 'manage.py', 'test', 
-        'apps.todos.test_e2e_playwright',
-        '--settings=config.test_settings',
-        '--verbosity=2'
-    ]
     
-    try:
-        result = subprocess.run(cmd, check=True)
-        print("E2Eテストが正常に完了しました。")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"E2Eテストが失敗しました: {e}")
-        return False
+    if test_module:
+        test_targets = [test_module]
+    else:
+        # 全てのE2Eテストを実行
+        test_targets = [
+            'apps.todos.test_e2e_playwright',
+            'apps.accounts.test_e2e_password_reset'
+        ]
+    
+    all_success = True
+    
+    for target in test_targets:
+        print(f"\n--- {target} を実行中 ---")
+        cmd = [
+            'python', 'manage.py', 'test', 
+            target,
+            '--settings=config.test_settings',
+            '--verbosity=2'
+        ]
+        
+        try:
+            result = subprocess.run(cmd, check=True)
+            print(f"✓ {target} が正常に完了しました。")
+        except subprocess.CalledProcessError as e:
+            print(f"✗ {target} が失敗しました: {e}")
+            all_success = False
+    
+    if all_success:
+        print("\n✓ 全てのE2Eテストが正常に完了しました。")
+    else:
+        print("\n✗ 一部のE2Eテストが失敗しました。")
+    
+    return all_success
 
 def check_dependencies():
     """依存関係をチェック"""
@@ -81,6 +101,20 @@ def main():
         action='store_true',
         help='依存関係をチェック'
     )
+    parser.add_argument(
+        '--test-module',
+        help='実行する特定のテストモジュール（例: apps.todos.test_e2e_playwright）'
+    )
+    parser.add_argument(
+        '--password-reset-only',
+        action='store_true',
+        help='パスワード再設定テストのみを実行'
+    )
+    parser.add_argument(
+        '--todos-only',
+        action='store_true',
+        help='Todoテストのみを実行'
+    )
     
     args = parser.parse_args()
     
@@ -104,7 +138,15 @@ def main():
         sys.exit(1)
     
     # テスト実行
-    success = run_e2e_tests()
+    test_module = None
+    if args.test_module:
+        test_module = args.test_module
+    elif args.password_reset_only:
+        test_module = 'apps.accounts.test_e2e_password_reset'
+    elif args.todos_only:
+        test_module = 'apps.todos.test_e2e_playwright'
+    
+    success = run_e2e_tests(test_module)
     
     if not success:
         sys.exit(1)
